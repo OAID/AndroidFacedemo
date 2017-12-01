@@ -112,13 +112,8 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             permissionsDelegate.requestaudioPermission();
         }
         mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.setMaxFrameSize(320,240);
-        try {
-            Runtime.getRuntime().exec("export  BYPASSACL = 0x14c ");
-            Runtime.getRuntime().exec(" export OPENBLAS_NUM_THREADS = 1 ");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mOpenCvCameraView.setMaxFrameSize(640,480);
+
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
@@ -212,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     public void onCameraViewStarted(int width, int height) {
         mRgba = new Mat(height, width, CvType.CV_8UC4);
         mGray = new Mat(height, width, CvType.CV_8UC1);
+        FaceDemoInit(0.9,0.9,0.9,0.6,32);
 
     }
 
@@ -226,27 +222,10 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
-        if(firstFrame){
-            Thread thread=new Thread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    Log.d("11111111", "111111111");
-                    long startTime = System.currentTimeMillis();
-                    // TODO Auto-generated method stub
-                    FaceDemoInit(0.9,0.9,0.9,0.6,64);
-                    FaceDemoRecognize(mRgba.getNativeObjAddr());
-                    long estimatedTime = System.currentTimeMillis() - startTime;
-                    Log.d("1111111111","estmated time =="+estimatedTime);
-                }
-            });
 
-            thread.start();
+        FaceDemoRecognize(mRgba.getNativeObjAddr());
 
 
-            firstFrame=false;
-        }
 
 
 
@@ -269,6 +248,12 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     public native String FaceDemoRecognize(long matAddrframe);
     // Used to load the 'native-lib' library on application startup.
     static {
+        try {
+            Runtime.getRuntime().exec("export  BYPASSACL = 0x14c ");
+            Runtime.getRuntime().exec(" export OPENBLAS_NUM_THREADS = 1 ");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.loadLibrary("opencv_java3");
         System.loadLibrary("OpenCL");
         System.loadLibrary("caffe");

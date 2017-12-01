@@ -71,7 +71,7 @@ find_library( # Sets the name of the path variable.
 
 ADD_SUBDIRECTORY(${CMAKE_SOURCE_DIR}/src/main/cpp/facecaffe)
 
-target_link_libraries(native-lib android log tinyalsa
+target_link_libraries(native-lib android log
     libopencv_java3  facecaffe libcaffe
     libprotobuf libproto libglog libarm_compute-static
     libarm_compute_core-static libboost_system libcaffe_jni
