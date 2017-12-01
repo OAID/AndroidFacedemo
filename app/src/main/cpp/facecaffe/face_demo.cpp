@@ -1,7 +1,13 @@
 
 #include "face_demo.hpp"
+#include "caffe_mtcnn.hpp"
+#include "feature_extractor.hpp"
+#include "lightened_cnn.hpp"
+#include "face_verify.hpp"
+
 #include <string.h>
 #include <stdlib.h>
+#include <android/log.h>
 
 #ifndef MODEL_DIR
 #define MODEL_DIR "/mnt/sdcard/openailab/models"
@@ -9,8 +15,41 @@
 #include "conf/stdtostring.h"
 #define UNKNOWN_FACE_ID_MAX 1000
 
+#define  LOG_TAG    "JNI_PART"
+#define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG, __VA_ARGS__)
+#define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG, __VA_ARGS__)
+#define LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG, __VA_ARGS__)
+#define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG, __VA_ARGS__)
+#define LOGF(...)  __android_log_print(ANDROID_LOG_FATAL,LOG_TAG, __VA_ARGS__)
+
 int Split(const std::string& src, const std::string& separator, std::vector<std::string>& dest);
 void draw_box_and_title(cv::Mat& frame, face_box& box, char * title);
+
+class only_for_extractor_auto_register
+{
+public:
+   only_for_extractor_auto_register(const std::string& name, extractor_factory::creator creator)
+   {
+      extractor_factory::register_creator(name,creator);
+   } 
+      
+};
+
+static mtcnn * caffe_creator(void)
+{
+	return new caffe_mtcnn();
+}
+
+static feature_extractor * lightened_cnn_creator(const std::string& name)
+{
+      return new lightened_cnn(name);
+}
+
+static face_verifier * cosine_distance_verifier_creator(const std::string& name)
+{
+	return  new cosine_distance_verifier();
+}
+
 int main()
 {
 	FaceDemo face_demo;
@@ -40,6 +79,9 @@ int main()
 int FaceDemo::Init(double threshold_p, double threshold_r, double threshold_o, double factor, int mim_size)
 {
 	const char * type="caffe";
+	
+	REGISTER_MTCNN_CREATOR(caffe,caffe_creator);
+	
 	p_mtcnn=mtcnn_factory::create_detector(type);
 	std::string model_dir = MODEL_DIR;	
 
@@ -54,6 +96,7 @@ int FaceDemo::Init(double threshold_p, double threshold_r, double threshold_o, d
 
 		std::cerr<<std::endl;
 
+		LOGD("[%s] p_mtcnn is NULL.....\n", __FUNCTION__);
 		return -1;
 	}
 	p_mtcnn->load_model(model_dir);
@@ -64,6 +107,10 @@ int FaceDemo::Init(double threshold_p, double threshold_r, double threshold_o, d
 
 	/* extractor */
 
+	static only_for_extractor_auto_register dummy_instance("lightened_cnn",lightened_cnn_creator);
+	
+	//extractor_factory::register_creator("lightened_cnn",lightened_cnn_creator);
+	
 	const std::string extractor_name("lightened_cnn");
 
 	p_extractor=extractor_factory::create_feature_extractor(extractor_name);
@@ -71,21 +118,25 @@ int FaceDemo::Init(double threshold_p, double threshold_r, double threshold_o, d
 	if(p_extractor==nullptr)
 	{
 		std::cerr<<"create feature extractor: "<<extractor_name<<" failed."<<std::endl;
+		
+		LOGD("[%s] p_extractor is NULL.....\n", __FUNCTION__);
 
 		return -2;
 	}
-
+	
 	p_extractor->load_model(model_dir);
 
-	/* verifier*/
+    REGISTER_SIMPLE_VERIFIER(cosine_distance,cosine_distance_verifier_creator);
 
+	/* verifier*/
 	p_verifier=get_face_verifier("cosine_distance");
-	p_verifier->set_feature_len(p_extractor->get_feature_length());
+	
+	
+	p_verifier->set_feature_len(p_extractor->get_feature_length());	
 
 	/* store */
-
 	p_mem_store=new face_mem_store(256,10);
-
+	
 	return 0;
 }
 

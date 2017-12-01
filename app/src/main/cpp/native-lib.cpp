@@ -47,7 +47,9 @@ Java_com_openailab_track_MainActivity_FaceDemoInit(JNIEnv *env, jobject instance
                                                    jdouble threshold_p, jdouble threshold_r,
                                                    jdouble threshold_o, jdouble factor,
                                                    jint mim_size) {
-    mFace_demo.Init(threshold_p, threshold_r, threshold_o, factor, mim_size);
+   int ret = mFace_demo.Init(threshold_p, threshold_r, threshold_o, factor, mim_size);
+   
+   LOGD("[%s] mFace_demo.Init %d.\n", __FUNCTION__, ret);
     // TODO
 
 }
@@ -70,8 +72,9 @@ Java_com_openailab_track_MainActivity_FaceDemoRecognize(JNIEnv *env, jobject ins
       Mat &mRgb = *(Mat *) matAddrframe;
       cvtColor(mRgb,mRgb,COLOR_RGBA2BGR);//opencv default work on BGR order without alpha
       flip(mRgb,mRgb,1);//miro mode
-     mFace_demo.Recognize(mRgb);
-cvtColor(mRgb,mRgb,COLOR_BGR2RGBA);//change back to android mode
+     std::string ss = mFace_demo.Recognize(mRgb);
+	 LOGD("[%s] FaceDemo Recognize %s\n", __FUNCTION__, ss.c_str());
+     cvtColor(mRgb,mRgb,COLOR_BGR2RGBA);//change back to android mode
     return env->NewStringUTF("string");
 }
 

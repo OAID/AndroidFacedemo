@@ -6,49 +6,6 @@
 
 #include "face_verify.hpp"
 
-class  only_for_auto_register
-{
-	public:
-		only_for_auto_register(const std::string& name, face_verifier_creator func)
-		{
-			register_face_verifier(name,func);
-		}
-
-};
-
-#define REGISTER_SIMPLE_VERIFIER(name,func) \
-	static only_for_auto_register dummy_simple_verifier_creator_## name(#name, func)
-
-struct face_pair
-{
-   float * p_feature;
-   unsigned int face_id;
-};
-
-class cosine_distance_verifier: public face_verifier
-{
-	public:
-
-		float compare(float * f0, float * f1, int len);
-
-		int search(float * f, int * face_id, float * p_score);
-
-
-                int insert_feature(float * feature, unsigned int face_id);
-                
-                void remove_feature(unsigned int face_id);
-
-                void set_feature_len(int feature_len) {feature_len_=feature_len;};
-
-		cosine_distance_verifier(void){feature_len_=256;};
-
-               ~cosine_distance_verifier(void);
-
-
-	private:
-                std::vector<face_pair> feature_db_;
-};
-
 cosine_distance_verifier::~cosine_distance_verifier(void)
 {
     for(int i=0;i<feature_db_.size();i++)
@@ -139,7 +96,7 @@ void cosine_distance_verifier::remove_feature(unsigned int face_id)
 }
 
 
-face_verifier * cosine_distance_verifier_creator(const std::string& name)
+static face_verifier * cosine_distance_verifier_creator(const std::string& name)
 {
 	return  new cosine_distance_verifier();
 }

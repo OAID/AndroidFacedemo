@@ -351,5 +351,5 @@ static mtcnn * caffe_creator(void)
 	return new caffe_mtcnn();
 }
 
-REGISTER_MTCNN_CREATOR(caffe,caffe_creator);
+//REGISTER_MTCNN_CREATOR(caffe,caffe_creator);
 
